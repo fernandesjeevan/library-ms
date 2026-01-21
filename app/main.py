@@ -1,21 +1,21 @@
 
-
-
-
+import os
 from datetime import timedelta,datetime , timezone
 from typing import Annotated
-
+from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
 import pdb
 from pwdlib import PasswordHash
 import jwt
+from app.api.router import api_router
 from jwt.exceptions import InvalidTokenError
 
+load_dotenv()
 # to get a string like this run:
 # openssl rand -hex 32
-SECRET_KEY = "9f3b2e6a7c1d4f8a0b6e2d9c5a1f7e3b8d4c2a6f1e9b0c7d3a5f8b2c6d1e4a9b"
+SECRET_KEY = os.getenv("ENCRYPTION_SECRET_KEY")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
@@ -71,7 +71,7 @@ fake_books_db =  {
 }
 
 
-app = FastAPI()
+app = FastAPI(title="Library Management System")
 
 
 
