@@ -9,8 +9,12 @@ from pydantic import BaseModel
 import pdb
 from pwdlib import PasswordHash
 import jwt
-from app.api.router import api_router
+# from app.api.router import api_router
 from jwt.exceptions import InvalidTokenError
+from sqlalchemy.orm import Session
+
+from app.core.dependencies import get_db
+from app.models.book import Book
 
 load_dotenv()
 # to get a string like this run:
@@ -101,8 +105,8 @@ class User(BaseModel):
 class UserInDB(User):
     hashed_password: str
 
-class Book(BaseModel):
-    id: str
+class BookSchema(BaseModel):
+    # id: str
     title:str
     no_of_pages: int|None = None
     genre: str|None  = None
@@ -110,7 +114,7 @@ class Book(BaseModel):
     author: str|None = None
 
 class Books(BaseModel):
-    book: list[Book]|None = None
+    book: list[BookSchema]|None = None
 
 def get_user(db, username: str):
     if username in db:
@@ -209,15 +213,14 @@ async def read_own_items(
     return [{"item_id":"congrats", "owner":current_user.username}]
 
 @app.get("/view/books")
-async def view_books():
-    books = Books.model_validate(fake_books_db)
-    return {"list of books":books}
+async def list_books(current_user:Annotated[User,Depends(get_current_active_user)],db: Session = Depends(get_db)):
+    return db.query(Book).all()
 
 @app.post("/admin/add/")
-async def add_books(book:Book):
-    
-    obj =Book.model_validate(book)
-    books = Books.model_validate(fake_books_db)
-    books.book.append(obj)
-    return {"updated list":books}
+async def add_books(book:BookSchema, current_user:Annotated[User,Depends(get_current_active_user)],db: Session = Depends(get_db)): 
+    obj =BookSchema.model_validate(book)
+    book_db_obj = Book(title=obj.title,author=obj.author,no_of_pages=obj.no_of_pages,genre=obj.genre,publication=obj.publication)
+    db.add(book_db_obj)
+    db.commit()
+    return {"Message":f"book {obj.title} inserted succesffuly"}
 
